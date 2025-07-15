@@ -83,14 +83,14 @@
   (lambda (var)
     (infinitesimal-part (funcall function (make-dual var 1)))))
 
+(defmethod divide2 (left (right dual-number))
+  (let ((conjugate (conjugate right)))
+    (/ (* left conjugate)
+       (* right conjugate))))
+
 (defmethod divide2 ((left dual-number) (right number))
   (make-dual (cl:/ (standard-part left) right)
              (cl:/ (infinitesimal-part left) right)))
-
-(defmethod divide2 (left (right dual-number))
-  (let ((conjugate (conjugate right)))
-    (divide2 (multiply2 left conjugate) 
-             (multiply2 right conjugate))))
 
 (defmethod exp ((obj dual-number))
   (let ((e (exp (standard-part obj))))
@@ -190,4 +190,3 @@
 (defmethod zerop ((obj dual-number))
   (and (zerop (standard-part obj))
        (zerop (infinitesimal-part obj))))
-
