@@ -2,6 +2,14 @@
 
 (in-package "DUAL-NUMBERS")
 
+(defgeneric infinitesimal-part (obj)
+  (:documentation "Return the infinitesimal-part of a dual number or number.")
+  (:method ((obj number)) 0))
+
+(defgeneric standard-part (obj)
+  (:documentation "Return the standard part of a dual number or number.")
+  (:method ((obj number)) obj))
+
 (defclass dual-number ()
   ((standard-part :initarg :standard-part
                   :reader standard-part)
@@ -17,12 +25,6 @@
         (format stream "#<DUAL-NUMBER ~A ~:[+~;-~] ~Aε>" std (minusp inf) (abs inf))
         (format stream "#<DUAL-NUMBER (~A ~:[+~;-~] ~Aε)/~A>" std (minusp inf) (abs inf) denom))))
 
-(defmethod standard-part ((obj number))
-  obj)
-
-(defmethod infinitesimal-part ((obj number))
-  0)
-
 (defun %make-dual (standard infinitesimal)
   "Create a dual number with STANDARD and INFINITESIMAL parts."
   (make-instance 'dual-number
@@ -36,8 +38,6 @@
       (make-instance 'dual-number
                      :standard-part standard
                      :infinitesimal-part infinitesimal)))
-
-
 
 (defmethod =2 ((left dual-number) (right dual-number))
   (and (= (standard-part left) (standard-part right))
@@ -80,6 +80,7 @@
           (cl:denominator (infinitesimal-part obj))))
 
 (defun derivative (function)
+  "Return a function that computes the derivative of FUNCTION at a point."
   (lambda (var)
     (infinitesimal-part (funcall function (make-dual var 1)))))
 
