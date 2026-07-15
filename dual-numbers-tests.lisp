@@ -1,4 +1,4 @@
-g;;; -*- Lisp -*-
+;;; -*- Lisp -*-
 
 (in-package "DUAL-NUMBERS-TESTS")
 
@@ -58,6 +58,24 @@ g;;; -*- Lisp -*-
   (assert (= (funcall (derivative #'log) 1) 1))
   (assert (= (funcall (derivative #'sqrt) 4) 1/4)))
 
+(defun test-dual-float ()
+  (let ((df (make-dual-float 2.0f0 3.0f0)))
+    (assert (typep df 'dual-float))
+    (assert (typep df 'dual-number))
+    (assert (= (standard-part df) 2.0f0))
+    (assert (= (infinitesimal-part df) 3.0f0))
+    (assert (typep (standard-part df) 'single-float))
+    (assert (typep (infinitesimal-part df) 'single-float)))
+  (let ((df (make-dual-float 2.0f0 0.0f0)))
+    (assert (not (typep df 'dual-float)))
+    (assert (= df 2.0f0)))
+  ;; Test that standard generic-arithmetic operations work on dual-float (by inheritance)
+  (let ((df1 (make-dual-float 2.0f0 3.0f0))
+        (df2 (make-dual-float 4.0f0 5.0f0)))
+    (assert (= (+ df1 df2) (make-dual-float 6.0f0 8.0f0)))
+    (assert (= (- df1 df2) (make-dual-float -2.0f0 -2.0f0)))
+    (assert (= (* df1 df2) (make-dual-float 8.0f0 22.0f0)))))
+
 (defun run-tests ()
   (test-creation)
   (test-arithmetic)
@@ -65,6 +83,7 @@ g;;; -*- Lisp -*-
   (test-zerop)
   (test-transcendental)
   (test-derivative)
+  (test-dual-float)
   (format t "All tests passed!~%"))
 
 (run-tests)

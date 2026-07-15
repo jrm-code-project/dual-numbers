@@ -53,14 +53,17 @@
    "TAN"
    "TANH"
    "TRUNCATE"
-   "ZEROP")                                    
+   "ZEROP")
+  (:shadowing-import-from "NAMED-LET" "LET" "NAMED-LAMBDA")
   (:export "MAKE-DUAL"
            "DERIVATIVE"
            "DUAL-NUMBER"
            "DUAL?"
            "STANDARD-PART"
-           "INFINITESIMAL-PART")
-  (:use "COMMON-LISP" "GENERIC-ARITHMETIC"))
+           "INFINITESIMAL-PART"
+           "DUAL-FLOAT"
+           "MAKE-DUAL-FLOAT")
+  (:use "COMMON-LISP" "GENERIC-ARITHMETIC" "NAMED-LET"))
 
 (defpackage "DUAL-NUMBERS-TESTS"
   (:shadowing-import-from "GENERIC-ARITHMETIC"

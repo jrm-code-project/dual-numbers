@@ -2,6 +2,19 @@
 
 (in-package "DUAL-NUMBERS")
 
+(defstruct (dual-number
+            (:constructor %make-dual (standard-part infinitesimal-part)))
+  standard-part
+  infinitesimal-part)
+
+(declaim (inline %make-dual-float make-dual-float))
+
+(defstruct (dual-float
+            (:include dual-number
+                      (standard-part 0.0 :type single-float)
+                      (infinitesimal-part 0.0 :type single-float))
+            (:constructor %make-dual-float (standard-part infinitesimal-part))))
+
 (defgeneric infinitesimal-part (obj)
   (:documentation "Return the infinitesimal-part of a dual number or number.")
   (:method ((obj number)) 0))
@@ -10,11 +23,26 @@
   (:documentation "Return the standard part of a dual number or number.")
   (:method ((obj number)) obj))
 
-(defclass dual-number ()
-  ((standard-part :initarg :standard-part
-                  :reader standard-part)
-   (infinitesimal-part :initarg :infinitesimal-part
-                        :reader infinitesimal-part)))
+(defmethod standard-part ((obj dual-number))
+  (dual-number-standard-part obj))
+
+(defmethod infinitesimal-part ((obj dual-number))
+  (dual-number-infinitesimal-part obj))
+
+(defmethod standard-part ((obj dual-float))
+  (declare (type dual-float obj))
+  (dual-float-standard-part obj))
+
+(defmethod infinitesimal-part ((obj dual-float))
+  (declare (type dual-float obj))
+  (dual-float-infinitesimal-part obj))
+
+(defun make-dual-float (standard infinitesimal)
+  "Create a dual-float with single-float standard and infinitesimal parts."
+  (declare (type single-float standard infinitesimal))
+  (if (cl:zerop infinitesimal)
+      standard
+      (%make-dual-float standard infinitesimal)))
 
 (defmethod print-object ((obj dual-number) stream)
   (let* ((denom (cl:lcm (cl:denominator (standard-part obj))
@@ -25,19 +53,11 @@
         (format stream "#<DUAL-NUMBER ~A ~:[+~;-~] ~Aε>" std (minusp inf) (abs inf))
         (format stream "#<DUAL-NUMBER (~A ~:[+~;-~] ~Aε)/~A>" std (minusp inf) (abs inf) denom))))
 
-(defun %make-dual (standard infinitesimal)
-  "Create a dual number with STANDARD and INFINITESIMAL parts."
-  (make-instance 'dual-number
-                 :standard-part standard
-                 :infinitesimal-part infinitesimal))
-
 (defun make-dual (standard infinitesimal)
   "Create a dual number with STANDARD and INFINITESIMAL parts."
   (if (zerop infinitesimal)
       standard
-      (make-instance 'dual-number
-                     :standard-part standard
-                     :infinitesimal-part infinitesimal)))
+      (%make-dual standard infinitesimal)))
 
 (defmethod =2 ((left dual-number) (right dual-number))
   (and (= (standard-part left) (standard-part right))
@@ -191,3 +211,25 @@
 (defmethod zerop ((obj dual-number))
   (and (zerop (standard-part obj))
        (zerop (infinitesimal-part obj))))
+
+(defun newton-step (function current-guess)
+  "Perform a single iteration of Newton's method using dual numbers."
+  (let* ((dual-result (funcall function (make-dual current-guess 1)))
+         ;; If your make-dual returns a raw number for zero infinitesimal, 
+         ;; we need to handle that or ensure the result is treated as a dual.
+         (y (standard-part dual-result))
+         (slope (infinitesimal-part dual-result)))
+    (if (zerop slope)
+        current-guess ; Or handle the 'flat-spot' catastrophe
+        (- current-guess (/ y slope)))))
+
+(defun solve-newton (function initial-guess &key (iterations 10) (tolerance 1e-10))
+  "Recursively find the root using the dual-number Newton step."
+  (let improve ((guess initial-guess)
+                (i iterations))
+    (if (zerop i)
+        guess
+        (let ((next-guess (newton-step function guess)))
+          (if (< (abs (- next-guess guess)) tolerance)
+              next-guess
+              (improve next-guess (1- i)))))))
